@@ -5,22 +5,11 @@ include 'includes/header.php';
 
 $search = $_GET['search'] ?? '';
 
-// Fetch products with their primary image
-if (!empty($search)) {
-    $stmt = $conn->prepare("SELECT p.*, (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image
-                            FROM products p
-                            WHERE p.model_name LIKE ? OR p.brand LIKE ?
-                            ORDER BY p.created_at DESC");
-    $searchTerm = '%' . $search . '%';
-    $stmt->bind_param("ss", $searchTerm, $searchTerm);
-    $stmt->execute();
-    $result = $stmt->get_result();
-} else {
-    $sql = "SELECT p.*, (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image
-            FROM products p
-            ORDER BY p.created_at DESC";
-    $result = $conn->query($sql);
-}
+// Fetch only the latest 8 products for the homepage
+$sql = "SELECT p.*, (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image
+        FROM products p
+        ORDER BY p.created_at DESC LIMIT 8";
+$result = $conn->query($sql);
 $products = [];
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -41,7 +30,7 @@ if ($result && $result->num_rows > 0) {
 
     <!-- Search Form -->
     <div class="max-w-3xl mx-auto mb-12">
-        <form action="index.php" method="GET" class="relative flex items-center w-full h-14 rounded-full focus-within:shadow-md bg-white border border-gray-200 overflow-hidden transition-shadow">
+        <form action="products.php" method="GET" class="relative flex items-center w-full h-14 rounded-full focus-within:shadow-md bg-white border border-gray-200 overflow-hidden transition-shadow">
             <div class="grid place-items-center h-full w-14 text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -58,12 +47,7 @@ if ($result && $result->num_rows > 0) {
                 Search
             </button>
         </form>
-        <?php if (!empty($search)): ?>
-            <div class="mt-4 flex items-center justify-between px-2">
-                <p class="text-sm text-gray-500">Showing results for <span class="font-bold text-gray-900">"<?php echo htmlspecialchars($search); ?>"</span></p>
-                <a href="index.php" class="text-sm font-medium text-brand-600 hover:text-brand-800">Clear filters</a>
-            </div>
-        <?php endif; ?>
+
     </div>
 
     <!-- Product Grid -->
@@ -105,6 +89,16 @@ if ($result && $result->num_rows > 0) {
                 <p>No products available right now.</p>
             </div>
         <?php endif; ?>
+    </div>
+
+    <!-- See All Button -->
+    <div class="mt-16 text-center">
+        <a href="products.php" class="inline-flex items-center gap-2 bg-white text-brand-600 border border-brand-200 px-8 py-3 rounded-full font-bold hover:bg-brand-50 hover:border-brand-300 transition-colors shadow-sm">
+            See All Products
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+        </a>
     </div>
 </div>
 

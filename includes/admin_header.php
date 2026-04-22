@@ -36,17 +36,37 @@ $current_page = basename($_SERVER['PHP_SELF']);
             font-family: 'Inter', sans-serif;
         }
     </style>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                overlay.classList.add('hidden');
+            } else {
+                overlay.classList.remove('hidden');
+            }
+        }
+    </script>
 </head>
 
-<body class="bg-gray-100 flex min-h-screen">
+<body class="bg-gray-100 flex h-screen overflow-hidden text-gray-900">
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden transition-opacity lg:hidden" onclick="toggleSidebar()"></div>
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-gray-900 text-white flex flex-col flex-shrink-0">
-        <div class="h-16 flex items-center px-6 bg-gray-950 font-bold text-xl border-b border-gray-800">
-            <a href="<?php echo $base_url; ?>/index.php" class="text-white hover:text-brand-500 transition-colors">📱 MobileShop Admin</a>
+    <aside id="sidebar" class="bg-gray-900 text-white w-64 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 transform -translate-x-full lg:relative lg:translate-x-0 z-50 transition-transform duration-300 shadow-xl lg:shadow-none">
+        <div class="h-16 flex items-center justify-between px-6 bg-gray-950 font-bold text-xl border-b border-gray-800">
+            <a href="<?php echo $base_url; ?>/index.php" class="text-white hover:text-brand-500 transition-colors flex items-center">📱 MobileShop</a>
+            <button class="lg:hidden text-gray-400 hover:text-white focus:outline-none" onclick="toggleSidebar()">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
         </div>
 
-        <div class="px-4 py-6 flex-grow">
+        <div class="px-4 py-6 flex-grow overflow-y-auto">
             <p class="text-xs uppercase text-gray-500 font-bold mb-4 tracking-wider">Management</p>
             <nav class="space-y-2">
                 <a href="dashboard.php" class="block px-4 py-2 rounded-md transition-colors <?php echo $current_page == 'dashboard.php' ? 'bg-brand-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'; ?>">
@@ -71,9 +91,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </div>
     </aside>
 
-    <!-- Main content -->
-    <div class="flex-grow flex flex-col min-w-0">
-        <header class="h-16 bg-white shadow-sm flex items-center px-8 border-b border-gray-200">
-            <h1 class="text-xl font-bold text-gray-800 capitalize"><?php echo pathinfo($current_page, PATHINFO_FILENAME); ?></h1>
+    <!-- Main Workspace Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        
+        <!-- Fixed Header -->
+        <header class="h-16 bg-white shadow-sm flex flex-shrink-0 items-center justify-between px-4 lg:px-8 border-b border-gray-200 z-30">
+            <div class="flex items-center">
+                <button class="lg:hidden text-gray-600 hover:text-brand-600 focus:outline-none mr-4 bg-gray-100 p-2 rounded-md transition-colors" onclick="toggleSidebar()">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <h1 class="text-xl font-bold text-gray-800 capitalize"><?php echo str_replace('.php', '', pathinfo($current_page, PATHINFO_FILENAME)); ?></h1>
+            </div>
         </header>
-        <main class="flex-grow p-8 overflow-y-auto">
+
+        <!-- Scrollable Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

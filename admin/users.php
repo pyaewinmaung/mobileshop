@@ -10,7 +10,7 @@ $users = $conn->query("SELECT id, username, email, role, created_at FROM users O
     <h2 class="text-2xl font-bold text-gray-900">Manage Users</h2>
 </div>
 
-<div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+<div class="bg-white shadow-sm rounded-xl overflow-x-auto border border-gray-200">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>

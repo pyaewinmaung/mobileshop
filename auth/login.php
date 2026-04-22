@@ -9,6 +9,12 @@ if (isset($_SESSION['user_id'])) {
 }
 
 $error = '';
+$success_msg = '';
+
+if (isset($_SESSION['login_message'])) {
+    $success_msg = $_SESSION['login_message'];
+    unset($_SESSION['login_message']);
+}
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = trim($_POST['email']);
@@ -55,6 +61,19 @@ include '../includes/header.php';
                 Or <a href="register.php" class="font-medium text-brand-600 hover:text-brand-500">create a new account</a>
             </p>
         </div>
+
+        <?php if ($success_msg): ?>
+            <div class="bg-green-50 border-l-4 border-green-500 p-4 mt-6 rounded-r-md">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3"><p class="text-sm text-green-700 font-medium"><?php echo htmlspecialchars($success_msg); ?></p></div>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <?php if ($error): ?>
             <div class="bg-red-50 border-l-4 border-red-500 p-4 mt-6">

@@ -108,7 +108,7 @@ include '../includes/admin_header.php';
         </div>
     <?php endif; ?>
 
-    <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-gray-200">
+    <div class="bg-white shadow-sm rounded-xl overflow-x-auto border border-gray-200">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -121,7 +121,26 @@ include '../includes/admin_header.php';
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php
-                $products = $conn->query("SELECT p.*, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image FROM products p ORDER BY id DESC");
+                // Pagination configuration
+                $limit = 10;
+                $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
+                if ($page < 1) $page = 1;
+
+                // Count total products for pagination
+                $total_result = $conn->query("SELECT COUNT(*) as count FROM products");
+                $total_row = $total_result->fetch_assoc();
+                $total_products = $total_row['count'];
+                $total_pages = ceil($total_products / $limit);
+
+                // Handle out-of-range edge cases gracefully
+                if ($page > $total_pages && $total_pages > 0) {
+                    $page = $total_pages;
+                }
+
+                $offset = ($page - 1) * $limit;
+
+                // Fetch products for current page using LIMIT and OFFSET
+                $products = $conn->query("SELECT p.*, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image FROM products p ORDER BY id DESC LIMIT $limit OFFSET $offset");
                 while ($p = $products->fetch_assoc()):
                 ?>
                     <tr class="hover:bg-gray-50">
@@ -151,6 +170,47 @@ include '../includes/admin_header.php';
             </tbody>
         </table>
     </div>
+
+    <?php if (isset($total_pages) && $total_pages > 1): ?>
+        <div class="flex items-center justify-between border border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
+            <div class="flex flex-1 justify-between sm:hidden">
+                <a href="?action=list&page=<?php echo max(1, $page - 1); ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 <?php if ($page <= 1) echo 'opacity-50 pointer-events-none'; ?>">Previous</a>
+                <a href="?action=list&page=<?php echo min($total_pages, $page + 1); ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 <?php if ($page >= $total_pages) echo 'opacity-50 pointer-events-none'; ?>">Next</a>
+            </div>
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span class="font-medium"><?php echo ($total_products == 0) ? 0 : $offset + 1; ?></span> to <span class="font-medium"><?php echo min($offset + $limit, $total_products); ?></span> of <span class="font-medium"><?php echo $total_products; ?></span> results
+                    </p>
+                </div>
+                <div>
+                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                        <a href="?action=list&page=<?php echo max(1, $page - 1); ?>" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 <?php if ($page <= 1) echo 'opacity-50 pointer-events-none'; ?>">
+                            <span class="sr-only">Previous</span>
+                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <?php if ($i == $page): ?>
+                                <a href="?action=list&page=<?php echo $i; ?>" aria-current="page" class="relative z-10 inline-flex items-center bg-brand-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><?php echo $i; ?></a>
+                            <?php else: ?>
+                                <a href="?action=list&page=<?php echo $i; ?>" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"><?php echo $i; ?></a>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+
+                        <a href="?action=list&page=<?php echo min($total_pages, $page + 1); ?>" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 <?php if ($page >= $total_pages) echo 'opacity-50 pointer-events-none'; ?>">
+                            <span class="sr-only">Next</span>
+                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
 <?php elseif ($action === 'add'): ?>
     <div class="flex items-center mb-6">

@@ -7,6 +7,49 @@ requireLogin();
 $user_id = $_SESSION['user_id'];
 $success = isset($_GET['order_success']) ? "Order placed successfully! Thank you for your purchase." : "";
 
+$tab = $_GET['tab'] ?? 'orders';
+$pwd_error = '';
+$pwd_success = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    $old_pwd = $_POST['old_password'] ?? '';
+    $new_pwd = $_POST['new_password'] ?? '';
+    $confirm_pwd = $_POST['confirm_password'] ?? '';
+
+    if (empty($old_pwd) || empty($new_pwd) || empty($confirm_pwd)) {
+        $pwd_error = "All fields are required.";
+    } elseif ($new_pwd !== $confirm_pwd) {
+        $pwd_error = "New passwords do not match.";
+    } elseif (strlen($new_pwd) < 6) {
+        $pwd_error = "New password must be at least 6 characters long.";
+    } else {
+        $stmt = $conn->prepare("SELECT password_hash FROM users WHERE id = ?");
+        $stmt->bind_param("i", $user_id);
+        $stmt->execute();
+        $user_row = $stmt->get_result()->fetch_assoc();
+
+        if ($user_row && password_verify($old_pwd, $user_row['password_hash'])) {
+            $new_hash = password_hash($new_pwd, PASSWORD_DEFAULT);
+            $update_stmt = $conn->prepare("UPDATE users SET password_hash = ? WHERE id = ?");
+            $update_stmt->bind_param("si", $new_hash, $user_id);
+            if ($update_stmt->execute()) {
+                // Invalidate current session and force re-login
+                session_unset();
+                session_destroy();
+                session_start();
+                $_SESSION['login_message'] = "Password changed successfully, please log in again.";
+                header("Location: ../auth/login.php");
+                exit;
+            } else {
+                $pwd_error = "Failed to update password. Please try again.";
+            }
+        } else {
+            $pwd_error = "Current password is incorrect.";
+        }
+    }
+    $tab = 'password';
+}
+
 // Fetch orders
 $stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC");
 $stmt->bind_param("i", $user_id);
@@ -30,19 +73,57 @@ include '../includes/header.php';
                     <?php echo strtoupper(substr($_SESSION['username'], 0, 1)); ?>
                 </div>
                 <h2 class="text-xl font-bold text-gray-900"><?php echo htmlspecialchars($_SESSION['username']); ?></h2>
-                <p class="text-sm text-gray-500 mb-6">User Profile</p>
-                
                 <nav class="space-y-2 border-t border-gray-100 pt-4">
-                    <a href="#" class="block px-3 py-2 bg-gray-50 text-brand-600 font-medium rounded-md">Order History</a>
+                    <a href="?tab=orders" class="block px-3 py-2 <?php echo $tab === 'orders' ? 'bg-brand-50 text-brand-600' : 'text-gray-600 hover:bg-gray-50'; ?> font-medium rounded-md transition-colors">Order History</a>
+                    <a href="?tab=password" class="block px-3 py-2 <?php echo $tab === 'password' ? 'bg-brand-50 text-brand-600' : 'text-gray-600 hover:bg-gray-50'; ?> font-medium rounded-md transition-colors">Change Password</a>
                     <a href="../auth/logout.php" class="block px-3 py-2 text-red-600 hover:bg-red-50 font-medium rounded-md transition-colors">Logout</a>
                 </nav>
             </div>
         </div>
 
         <div class="md:col-span-3">
-            <h3 class="text-2xl font-extrabold text-gray-900 mb-6">Order History</h3>
-            
-            <?php if ($ordersResult && $ordersResult->num_rows > 0): ?>
+            <?php if ($tab === 'password'): ?>
+                <h3 class="text-2xl font-extrabold text-gray-900 mb-6">Change Password</h3>
+                
+                <?php if ($pwd_error): ?>
+                    <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
+                        <p class="text-sm text-red-700"><?php echo htmlspecialchars($pwd_error); ?></p>
+                    </div>
+                <?php endif; ?>
+                <?php if ($pwd_success): ?>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded-md">
+                        <p class="text-sm text-green-700 font-bold"><?php echo htmlspecialchars($pwd_success); ?></p>
+                    </div>
+                <?php endif; ?>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden max-w-lg">
+                    <form action="profile.php?tab=password" method="POST" class="p-6 sm:p-8 space-y-6">
+                        <input type="hidden" name="change_password" value="1">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
+                            <input type="password" name="old_password" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                            <input type="password" name="new_password" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
+                            <p class="mt-1 text-xs text-gray-500">Must be at least 6 characters long.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                            <input type="password" name="confirm_password" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-md text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 transition-colors">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            <?php else: ?>
+                <h3 class="text-2xl font-extrabold text-gray-900 mb-6">Order History</h3>
+                
+                <?php if ($ordersResult && $ordersResult->num_rows > 0): ?>
                 <div class="space-y-6">
                 <?php while ($order = $ordersResult->fetch_assoc()): ?>
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -99,6 +180,7 @@ include '../includes/header.php';
                 <div class="bg-gray-50 rounded-xl border border-gray-100 p-12 text-center text-gray-500">
                     You haven't placed any orders yet.
                 </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>

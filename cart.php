@@ -157,7 +157,7 @@ $totalQuantity = 0;
 
                 <dl class="mt-6 space-y-4">
                     <div class="flex items-center justify-between">
-                        <dt class="text-sm text-gray-600">Quantity</dt>
+                        <dt class="text-sm text-gray-600">Total Items</dt>
                         <dd class="text-sm font-medium text-gray-900"><?php echo $totalQuantity; ?></dd>
                     </div>
                     <div class="flex items-center justify-between">
