@@ -1,6 +1,6 @@
 # mobileshop
 Core Technologies:
-Frontend: HTML5, Tailwind CSS (via CDN for rapid styling), JavaScript (DOM manipulation, AJAX if necessary).
+Frontend: HTML5, Tailwind CSS (via CDN for rapid styling), JavaScript (DOM manipulation).
 Backend: PHP (Procedural or OOP mysqli for database interactions).
 Database: MySQL.
 Security: password_hash() for secure credential storage, prepared statements to prevent SQL injection, and session-based authentication for role management.
