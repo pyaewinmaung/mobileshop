@@ -61,6 +61,16 @@ $base_url = '/mobileshop';
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                                     </svg>
                                 </a>
+                                <a href="<?php echo $base_url; ?>/wishlist.php" class="text-gray-600 hover:text-red-500 font-medium transition-colors relative" aria-label="Wishlist">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                                    </svg>
+                                    <?php $wishCount = getWishlistCount($conn); if ($wishCount > 0): ?>
+                                        <span class="absolute -top-2 -right-3 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                            <?php echo $wishCount; ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </a>
                             <?php endif; ?>
                         <?php else: ?>
                             <a href="<?php echo $base_url; ?>/auth/login.php" class="text-gray-600 hover:text-brand-600 font-medium transition-colors">Login</a>
@@ -97,6 +107,11 @@ $base_url = '/mobileshop';
                         <a href="<?php echo $base_url; ?>/admin/dashboard.php" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-gray-50">Admin Dashboard</a>
                     <?php else: ?>
                         <a href="<?php echo $base_url; ?>/user/profile.php" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-gray-50"> Profile</a>
+                        <a href="<?php echo $base_url; ?>/wishlist.php" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-gray-50">❤️ Wishlist
+                            <?php $mobileWishCount = getWishlistCount($conn); if ($mobileWishCount > 0): ?>
+                                <span class="ml-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5"><?php echo $mobileWishCount; ?></span>
+                            <?php endif; ?>
+                        </a>
                     <?php endif; ?>
                 <?php else: ?>
                     <a href="<?php echo $base_url; ?>/auth/login.php" class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-gray-50">Login</a>

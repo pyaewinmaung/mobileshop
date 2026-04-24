@@ -1,6 +1,7 @@
 <?php
 // admin/products.php
 require_once '../config/db.php';
+require_once '../includes/functions.php';
 
 $action = $_GET['action'] ?? 'list';
 $msg = '';
@@ -62,7 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     mkdir($uploadDir, 0755, true);
                 }
 
-                // Remove existing images to replace them
+                // Delete old image files from disk before removing DB records
+                deleteProductImageFiles($conn, $id);
                 $conn->query("DELETE FROM product_images WHERE product_id = " . intval($id));
 
                 $stmtImg = $conn->prepare("INSERT INTO product_images (product_id, image_url, is_primary) VALUES (?, ?, ?)");
@@ -86,8 +88,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif (isset($_POST['delete_product'])) {
         $id = intval($_POST['product_id']);
-        $conn->query("DELETE FROM products WHERE id = $id");
-        $msg = "Product deleted.";
+
+        // Step 1: Delete physical image files from disk BEFORE removing DB records
+        $filesDeleted = deleteProductImageFiles($conn, $id);
+
+        // Step 2: Use a transaction to ensure database integrity
+        $conn->begin_transaction();
+        try {
+            // product_images rows are auto-deleted via ON DELETE CASCADE,
+            // but we explicitly delete them first as a safety net
+            $stmt = $conn->prepare("DELETE FROM product_images WHERE product_id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $stmt->close();
+
+            // Delete the product itself
+            $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $stmt->close();
+
+            $conn->commit();
+            $msg = "Product and $filesDeleted image(s) deleted successfully.";
+        } catch (Exception $e) {
+            $conn->rollback();
+            $msg = "Error deleting product: " . $e->getMessage();
+        }
     }
 }
 
@@ -121,8 +147,9 @@ include '../includes/admin_header.php';
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 <?php
-                // Pagination configuration
-                $limit = 10;
+                // Pagination configuration — limit is user-selectable via query param
+                $allowed_limits = [10, 50, 100];
+                $limit = isset($_GET['limit']) && in_array((int)$_GET['limit'], $allowed_limits) ? (int)$_GET['limit'] : 10;
                 $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] : 1;
                 if ($page < 1) $page = 1;
 
@@ -171,43 +198,62 @@ include '../includes/admin_header.php';
         </table>
     </div>
 
-    <?php if (isset($total_pages) && $total_pages > 1): ?>
-        <div class="flex items-center justify-between border border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm">
-            <div class="flex flex-1 justify-between sm:hidden">
-                <a href="?action=list&page=<?php echo max(1, $page - 1); ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 <?php if ($page <= 1) echo 'opacity-50 pointer-events-none'; ?>">Previous</a>
-                <a href="?action=list&page=<?php echo min($total_pages, $page + 1); ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 <?php if ($page >= $total_pages) echo 'opacity-50 pointer-events-none'; ?>">Next</a>
+    <?php if (isset($total_pages)): ?>
+        <div class="flex flex-col sm:flex-row items-center justify-between border border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-xl shadow-sm gap-3">
+            <!-- Mobile: simple prev/next -->
+            <div class="flex flex-1 justify-between sm:hidden w-full">
+                <a href="?action=list&page=<?php echo max(1, $page - 1); ?>&limit=<?php echo $limit; ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 <?php if ($page <= 1) echo 'opacity-50 pointer-events-none'; ?>">Previous</a>
+                <span class="inline-flex items-center text-sm text-gray-500">Page <?php echo $page; ?> of <?php echo $total_pages; ?></span>
+                <a href="?action=list&page=<?php echo min($total_pages, $page + 1); ?>&limit=<?php echo $limit; ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 <?php if ($page >= $total_pages) echo 'opacity-50 pointer-events-none'; ?>">Next</a>
             </div>
+
+            <!-- Desktop: full pagination -->
             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
+                <div class="flex items-center gap-4">
                     <p class="text-sm text-gray-700">
                         Showing <span class="font-medium"><?php echo ($total_products == 0) ? 0 : $offset + 1; ?></span> to <span class="font-medium"><?php echo min($offset + $limit, $total_products); ?></span> of <span class="font-medium"><?php echo $total_products; ?></span> results
+                        <span class="text-gray-400 mx-1">·</span>
+                        Page <span class="font-medium"><?php echo $page; ?></span> of <span class="font-medium"><?php echo $total_pages; ?></span>
                     </p>
-                </div>
-                <div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <a href="?action=list&page=<?php echo max(1, $page - 1); ?>" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 <?php if ($page <= 1) echo 'opacity-50 pointer-events-none'; ?>">
-                            <span class="sr-only">Previous</span>
-                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
-                            </svg>
-                        </a>
 
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <?php if ($i == $page): ?>
-                                <a href="?action=list&page=<?php echo $i; ?>" aria-current="page" class="relative z-10 inline-flex items-center bg-brand-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><?php echo $i; ?></a>
-                            <?php else: ?>
-                                <a href="?action=list&page=<?php echo $i; ?>" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"><?php echo $i; ?></a>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-
-                        <a href="?action=list&page=<?php echo min($total_pages, $page + 1); ?>" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 <?php if ($page >= $total_pages) echo 'opacity-50 pointer-events-none'; ?>">
-                            <span class="sr-only">Next</span>
-                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
-                            </svg>
-                        </a>
-                    </nav>
+                    <!-- Rows per page dropdown -->
+                    <div class="flex items-center gap-2">
+                        <label for="rows-per-page" class="text-sm text-gray-500 whitespace-nowrap">Rows per page:</label>
+                        <select id="rows-per-page" onchange="window.location.href='?action=list&page=1&limit=' + this.value" class="rounded-md border border-gray-300 bg-white py-1.5 pl-3 pr-8 text-sm font-medium text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer">
+                            <?php foreach ($allowed_limits as $opt): ?>
+                                <option value="<?php echo $opt; ?>" <?php echo $limit === $opt ? 'selected' : ''; ?>><?php echo $opt; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                 </div>
+
+                <?php if ($total_pages > 1): ?>
+                    <div>
+                        <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <a href="?action=list&page=<?php echo max(1, $page - 1); ?>&limit=<?php echo $limit; ?>" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 <?php if ($page <= 1) echo 'opacity-50 pointer-events-none'; ?>">
+                                <span class="sr-only">Previous</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <?php if ($i == $page): ?>
+                                    <a href="?action=list&page=<?php echo $i; ?>&limit=<?php echo $limit; ?>" aria-current="page" class="relative z-10 inline-flex items-center bg-brand-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"><?php echo $i; ?></a>
+                                <?php else: ?>
+                                    <a href="?action=list&page=<?php echo $i; ?>&limit=<?php echo $limit; ?>" class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"><?php echo $i; ?></a>
+                                <?php endif; ?>
+                            <?php endfor; ?>
+
+                            <a href="?action=list&page=<?php echo min($total_pages, $page + 1); ?>&limit=<?php echo $limit; ?>" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 <?php if ($page >= $total_pages) echo 'opacity-50 pointer-events-none'; ?>">
+                                <span class="sr-only">Next</span>
+                                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+                                </svg>
+                            </a>
+                        </nav>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     <?php endif; ?>
@@ -236,11 +282,11 @@ include '../includes/admin_header.php';
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
-                    <input type="number" step="0.01" name="price" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
+                    <input type="number" step="0.01" min="1" name="price" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
-                    <input type="number" name="stock" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
+                    <input type="number" name="stock" min="1" required class="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-500 focus:border-brand-500 sm:text-sm p-3">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>

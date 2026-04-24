@@ -121,10 +121,10 @@ $totalQuantity = 0;
                                             <label for="quantity-<?php echo $id; ?>" class="sr-only">Quantity</label>
                                             <div class="flex items-center border border-gray-400 rounded-md overflow-hidden mr-4 h-9 w-28 bg-white shadow-sm">
                                                 <button type="button" onclick="handleQuantity('down', <?php echo $id; ?>)" class="w-9 h-full text-gray-700 hover:bg-gray-100 flex items-center justify-center text-lg border-r border-gray-400 transition-colors cursor-pointer select-none outline-none font-medium">&minus;</button>
-                                                <input type="number" id="quantity-<?php echo $id; ?>" name="quantity" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo $maxStock; ?>" class="flex-1 w-full h-full text-center border-none focus:ring-0 text-base font-medium text-gray-900 px-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" readonly>
+                                                <input type="number" id="quantity-<?php echo $id; ?>" name="quantity" value="<?php echo $item['quantity']; ?>" min="1" max="<?php echo $maxStock; ?>" class="flex-1 w-full h-full text-center border-none focus:ring-0 text-base font-medium text-gray-900 px-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                                                 <button type="button" onclick="handleQuantity('up', <?php echo $id; ?>)" class="w-9 h-full text-gray-700 hover:bg-gray-100 flex items-center justify-center text-lg border-l border-gray-400 transition-colors cursor-pointer select-none outline-none font-medium">&#43;</button>
                                             </div>
-                                            <button type="submit" class="text-sm font-medium text-brand-600 hover:text-brand-500 bg-brand-50 px-3 py-1.5 rounded-md hover:bg-brand-100 transition-colors">Update</button>
+                                            <button type="submit" class="text-sm font-medium text-brand-600 hover:text-brand-500 bg-brand-50 px-3 py-1.5 rounded-md border-2 border-brand-500/50 hover:bg-brand-100 transition-colors">Update</button>
                                         </form>
                                         <p id="stock-warning-<?php echo $id; ?>" class="text-xs text-red-500 mt-2 font-medium hidden">Maximum available stock reached!</p>
 

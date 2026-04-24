@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
-                
+
                 if ($user['role'] === 'admin') {
                     header("Location: ../admin/dashboard.php");
                 } else {
@@ -70,7 +70,9 @@ include '../includes/header.php';
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <div class="ml-3"><p class="text-sm text-green-700 font-medium"><?php echo htmlspecialchars($success_msg); ?></p></div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700 font-medium"><?php echo htmlspecialchars($success_msg); ?></p>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>
@@ -83,12 +85,14 @@ include '../includes/header.php';
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                         </svg>
                     </div>
-                    <div class="ml-3"><p class="text-sm text-red-700"><?php echo $error; ?></p></div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700"><?php echo $error; ?></p>
+                    </div>
                 </div>
             </div>
         <?php endif; ?>
 
-        <form class="mt-8 space-y-6" action="login.php" method="POST">
+        <form id="login-form" class="mt-8 space-y-6" action="login.php" method="POST">
             <div class="space-y-4">
                 <div>
                     <label for="email" class="text-sm font-medium text-gray-700 block mb-1">Email address</label>
@@ -119,5 +123,57 @@ include '../includes/header.php';
         </form>
     </div>
 </div>
+
+<script>
+    (function() {
+        const STORAGE_KEY = 'mobileshop_remember';
+        const form = document.getElementById('login-form');
+        const emailEl = document.getElementById('email');
+        const passEl = document.getElementById('password');
+        const rememberEl = document.getElementById('remember-me');
+
+        // --- On page load: auto-fill if saved data exists ---
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                // Only auto-fill when the server hasn't already set a value (e.g. after a failed POST)
+                if (emailEl && !emailEl.value && data.email) {
+                    emailEl.value = data.email;
+                }
+                if (passEl && !passEl.value && data.p) {
+                    // Password is base64-encoded (obfuscation only, NOT real encryption)
+                    passEl.value = atob(data.p);
+                }
+                if (rememberEl) {
+                    rememberEl.checked = true;
+                }
+            }
+        } catch (e) {
+            // Corrupted data — clear it silently
+            localStorage.removeItem(STORAGE_KEY);
+        }
+
+        // --- On form submit: save or clear based on checkbox ---
+        if (form) {
+            form.addEventListener('submit', function() {
+                if (rememberEl && rememberEl.checked) {
+                    const payload = {
+                        email: emailEl.value,
+                        p: btoa(passEl.value)
+                    };
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+                } else {
+                    localStorage.removeItem(STORAGE_KEY);
+                }
+            });
+        }
+
+        // --- Clear stored data if redirected from logout (?cleared=1) ---
+        if (window.location.search.includes('cleared=1')) {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    })();
+</script>
 
 <?php include '../includes/footer.php'; ?>

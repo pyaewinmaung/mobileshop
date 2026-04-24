@@ -1,6 +1,20 @@
 <?php
 // product.php
 require_once 'config/db.php';
+require_once 'includes/functions.php';
+
+// Handle wishlist toggle (POST-Redirect-GET)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_wishlist'])) {
+    if (isLoggedIn()) {
+        $productId = intval($_POST['product_id']);
+        toggleWishlist($conn, $productId);
+    } else {
+        header("Location: /mobileshop/auth/login.php");
+        exit;
+    }
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit;
+}
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
@@ -64,6 +78,26 @@ include 'includes/header.php';
                             Out of Stock
                         </span>
                     <?php endif; ?>
+
+                    <!-- Wishlist heart button -->
+                    <?php $isWishlisted = in_array($product['id'], getUserWishlistIds($conn)); ?>
+                    <form method="POST" action="" class="ml-auto">
+                        <input type="hidden" name="toggle_wishlist" value="1">
+                        <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
+                        <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border <?php echo $isWishlisted ? 'border-red-200 bg-red-50 text-red-600' : 'border-gray-300 bg-white text-gray-500 hover:text-red-500 hover:border-red-200'; ?> transition-all hover:scale-105 font-medium text-sm shadow-sm" aria-label="Toggle Wishlist">
+                            <?php if ($isWishlisted): ?>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
+                                    <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z" />
+                                </svg>
+                                Wishlisted
+                            <?php else: ?>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                                </svg>
+                                Add to Wishlist
+                            <?php endif; ?>
+                        </button>
+                    </form>
                 </div>
 
                 <div class="prose prose-sm text-gray-500 mb-8 flex-grow">
@@ -80,7 +114,7 @@ include 'includes/header.php';
                                 <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
                                 <div class="flex items-center border border-gray-400 rounded-md overflow-hidden mr-4 h-9 w-32 bg-white shadow-sm">
                                     <button type="button" onclick="handleQuantity('down')" class="w-9 h-full text-gray-700 hover:bg-gray-100 flex items-center justify-center text-lg border-r border-gray-400 transition-colors cursor-pointer select-none outline-none font-medium">&minus;</button>
-                                    <input type="number" id="quantity-<?php echo $id; ?>" name="quantity" value="1" min="1" max="<?php echo $product['stock_quantity']; ?>" class="flex-1 w-full h-full text-center border-none focus:ring-0 text-base font-medium text-gray-900 px-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" readonly>
+                                    <input type="number" id="quantity-<?php echo $id; ?>" name="quantity" value="1" min="1" max="<?php echo $product['stock_quantity']; ?>" class="flex-1 w-full h-full text-center border-none focus:ring-0 text-base font-medium text-gray-900 px-0 m-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none">
                                     <button type="button" onclick="handleQuantity('up')" class="w-9 h-full text-gray-700 hover:bg-gray-100 flex items-center justify-center text-lg border-l border-gray-400 transition-colors cursor-pointer select-none outline-none font-medium">&#43;</button>
                                 </div>
                                 <p id="stock-warning" class="text-xs text-red-500 mt-2 font-medium hidden">Maximum available stock reached!</p>
