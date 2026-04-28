@@ -84,7 +84,7 @@ include '../includes/header.php';
         <div class="md:col-span-3">
             <?php if ($tab === 'password'): ?>
                 <h3 class="text-2xl font-extrabold text-gray-900 mb-6">Change Password</h3>
-                
+
                 <?php if ($pwd_error): ?>
                     <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-md">
                         <p class="text-sm text-red-700"><?php echo htmlspecialchars($pwd_error); ?></p>
@@ -122,64 +122,62 @@ include '../includes/header.php';
 
             <?php else: ?>
                 <h3 class="text-2xl font-extrabold text-gray-900 mb-6">Order History</h3>
-                
-                <?php if ($ordersResult && $ordersResult->num_rows > 0): ?>
-                <div class="space-y-6">
-                <?php while ($order = $ordersResult->fetch_assoc()): ?>
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div class="bg-gray-50 border-b border-gray-100 p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4">
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Order Placed</p>
-                                <p class="font-medium text-gray-900"><?php echo date('M d, Y', strtotime($order['order_date'])); ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Total</p>
-                                <p class="font-medium text-gray-900"><?php echo formatPrice($order['total_amount']); ?></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Status</p>
-                                <span class="px-2 py-1 text-xs font-bold rounded-full 
-                                    <?php 
-                                        echo $order['status'] === 'delivered' ? 'bg-green-100 text-green-800' : 
-                                            ($order['status'] === 'shipped' ? 'bg-blue-100 text-blue-800' : 
-                                            ($order['status'] === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800')); 
-                                    ?>">
-                                    <?php echo ucfirst($order['status']); ?>
-                                </span>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 mb-1">Order #</p>
-                                <p class="font-medium text-gray-900"><?php echo $order['id']; ?></p>
-                            </div>
-                        </div>
 
-                        <?php 
-                        // Fetch order items
-                        $stmtItems = $conn->prepare("SELECT oi.*, p.model_name, p.brand, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
-                        $stmtItems->bind_param("i", $order['id']);
-                        $stmtItems->execute();
-                        $itemsResult = $stmtItems->get_result();
-                        ?>
-                        
-                        <div class="p-4 sm:px-6 divide-y divide-gray-100">
-                            <?php while ($item = $itemsResult->fetch_assoc()): ?>
-                            <div class="py-4 flex gap-4">
-                                <img src="<?php echo htmlspecialchars($item['image'] ?? 'https://via.placeholder.com/100'); ?>" alt="" class="w-20 h-20 object-contain rounded bg-gray-50 border border-gray-100 p-1">
-                                <div>
-                                    <h4 class="font-bold text-gray-900"><a href="../product.php?id=<?php echo $item['product_id']; ?>"><?php echo htmlspecialchars($item['model_name']); ?></a></h4>
-                                    <p class="text-sm text-gray-500"><?php echo htmlspecialchars($item['brand']); ?></p>
-                                    <p class="mt-1 text-sm"><span class="font-medium text-gray-900"><?php echo formatPrice($item['price_at_purchase']); ?></span> <span class="text-gray-500">x <?php echo $item['quantity']; ?></span></p>
+                <?php if ($ordersResult && $ordersResult->num_rows > 0): ?>
+                    <div class="space-y-6">
+                        <?php while ($order = $ordersResult->fetch_assoc()): ?>
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                <div class="bg-gray-50 border-b border-gray-100 p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4">
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Order Placed</p>
+                                        <p class="font-medium text-gray-900"><?php echo date('M d, Y', strtotime($order['order_date'])); ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Total</p>
+                                        <p class="font-medium text-gray-900"><?php echo formatPrice($order['total_amount']); ?></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Status</p>
+                                        <span class="px-2 py-1 text-xs font-bold rounded-full 
+                                    <?php
+                                    echo $order['status'] === 'delivered' ? 'bg-green-100 text-green-800' : ($order['status'] === 'shipped' ? 'bg-blue-100 text-blue-800' : ($order['status'] === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'));
+                                    ?>">
+                                            <?php echo ucfirst($order['status']); ?>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Order #</p>
+                                        <p class="font-medium text-gray-900"><?php echo $order['id']; ?></p>
+                                    </div>
+                                </div>
+
+                                <?php
+                                // Fetch order items
+                                $stmtItems = $conn->prepare("SELECT oi.*, p.model_name, p.brand, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
+                                $stmtItems->bind_param("i", $order['id']);
+                                $stmtItems->execute();
+                                $itemsResult = $stmtItems->get_result();
+                                ?>
+
+                                <div class="p-4 sm:px-6 divide-y divide-gray-100">
+                                    <?php while ($item = $itemsResult->fetch_assoc()): ?>
+                                        <div class="py-4 flex gap-4">
+                                            <img src="<?php echo htmlspecialchars($item['image'] ?? 'https://via.placeholder.com/100'); ?>" alt="" class="w-20 h-20 object-contain rounded bg-gray-50 border border-gray-100 p-1">
+                                            <div>
+                                                <h4 class="font-bold text-gray-900"><a href="../product.php?id=<?php echo $item['product_id']; ?>"><?php echo htmlspecialchars($item['model_name']); ?></a></h4>
+                                                <p class="text-sm text-gray-500"><?php echo htmlspecialchars($item['brand']); ?></p>
+                                                <p class="mt-1 text-sm"><span class="font-medium text-gray-900"><?php echo formatPrice($item['price_at_purchase']); ?></span> <span class="text-gray-500">x <?php echo $item['quantity']; ?></span></p>
+                                            </div>
+                                        </div>
+                                    <?php endwhile; ?>
                                 </div>
                             </div>
-                            <?php endwhile; ?>
-                        </div>
+                        <?php endwhile; ?>
                     </div>
-                <?php endwhile; ?>
-                </div>
-            <?php else: ?>
-                <div class="bg-gray-50 rounded-xl border border-gray-100 p-12 text-center text-gray-500">
-                    You haven't placed any orders yet.
-                </div>
+                <?php else: ?>
+                    <div class="bg-gray-50 rounded-xl border border-gray-100 p-12 text-center text-gray-500">
+                        You haven't placed any orders yet.
+                    </div>
                 <?php endif; ?>
             <?php endif; ?>
         </div>

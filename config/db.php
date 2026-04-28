@@ -38,17 +38,17 @@ $conn->query("CREATE TABLE IF NOT EXISTS wishlist (
 )");
 
 // Helper function for quick prepared queries if needed
-function executeQuery($conn, $sql, $types = null, ...$params) {
+function executeQuery($conn, $sql, $types = null, ...$params)
+{
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
         die("Error preparing statement: " . $conn->error);
     }
-    
+
     if ($types && count($params) > 0) {
         $stmt->bind_param($types, ...$params);
     }
-    
+
     $stmt->execute();
     return $stmt;
 }
-?>

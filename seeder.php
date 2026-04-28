@@ -5,7 +5,7 @@ require 'config/db.php';
 echo "Running seeder...<br>";
 
 // Drop existing tables to start fresh
-$tables = ['order_items', 'orders', 'product_images', 'products', 'users'];
+$tables = ['order_items', 'orders', 'product_images', 'products', 'users', 'wishlist'];
 $conn->query("SET FOREIGN_KEY_CHECKS = 0");
 foreach ($tables as $table) {
     if ($conn->query("DROP TABLE IF EXISTS $table")) {

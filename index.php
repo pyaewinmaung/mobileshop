@@ -96,7 +96,7 @@ if ($result && $result->num_rows > 0) {
 
                     <img src="<?php echo htmlspecialchars($p['primary_image'] ?? 'https://via.placeholder.com/400x400?text=No+Image'); ?>"
                         alt="<?php echo htmlspecialchars($p['model_name']); ?>"
-                        class="h-64 w-full object-contain object-center group-hover:scale-105 transition-transform duration-500">
+                        class="h-64 w-full object-contain object-center group-hover:scale-105 transition-transform duration-500" />
                 </div>
 
                 <div class="p-6 flex flex-col flex-grow">
