@@ -96,11 +96,24 @@ include '../includes/header.php';
             <div class="space-y-4">
                 <div>
                     <label for="email" class="text-sm font-medium text-gray-700 block mb-1">Email address</label>
-                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm" placeholder="you@example.com" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                    <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm" placeholder="you@gmail.com" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                 </div>
                 <div>
                     <label for="password" class="text-sm font-medium text-gray-700 block mb-1">Password</label>
-                    <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none rounded-md relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm" placeholder="••••••••">
+                    <div class="relative">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none rounded-md relative block w-full px-3 py-3 pr-10 border border-gray-300 placeholder-gray-500/70 text-gray-900 focus:outline-none focus:ring-brand-500 focus:border-brand-500 sm:text-sm" placeholder="••••••••">
+                        <button type="button" id="toggle-password" aria-label="Toggle password visibility"
+                            class="absolute inset-y-0 right-0 flex items-center pr-2.5 text-gray-400 hover:text-gray-600 focus:outline-none bg-transparent border-0 cursor-pointer">
+                            <!-- Eye-off icon (shown when password is hidden) -->
+                            <svg id="icon-eye-off" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="currentColor" d="M2 5.27L3.28 4L20 20.72L18.73 22l-3.08-3.08c-1.15.38-2.37.58-3.65.58c-5 0-9.27-3.11-11-7.5c.69-1.76 1.79-3.31 3.19-4.54zM12 9a3 3 0 0 1 3 3a3 3 0 0 1-.17 1L11 9.17A3 3 0 0 1 12 9m0-4.5c5 0 9.27 3.11 11 7.5a11.8 11.8 0 0 1-4 5.19l-1.42-1.43A9.86 9.86 0 0 0 20.82 12A9.82 9.82 0 0 0 12 6.5c-1.09 0-2.16.18-3.16.5L7.3 5.47c1.44-.62 3.03-.97 4.7-.97M3.18 12A9.82 9.82 0 0 0 12 17.5c.69 0 1.37-.07 2-.21L11.72 15A3.064 3.064 0 0 1 9 12.28L5.6 8.87c-.99.85-1.82 1.91-2.42 3.13" />
+                            </svg>
+                            <!-- Eye icon (shown when password is visible) -->
+                            <svg id="icon-eye" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="hidden">
+                                <path fill="currentColor" d="M12 9a3 3 0 0 1 3 3a3 3 0 0 1-3 3a3 3 0 0 1-3-3a3 3 0 0 1 3-3m0-4.5c5 0 9.27 3.11 11 7.5c-1.73 4.39-6 7.5-11 7.5S2.73 16.39 1 12c1.73-4.39 6-7.5 11-7.5M3.18 12a9.821 9.821 0 0 0 17.64 0a9.821 9.821 0 0 0-17.64 0" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -123,6 +136,25 @@ include '../includes/header.php';
         </form>
     </div>
 </div>
+
+<script>
+    // --- Show/Hide password toggle ---
+    (function() {
+        const toggleBtn = document.getElementById('toggle-password');
+        const passwordInput = document.getElementById('password');
+        const iconEyeOff = document.getElementById('icon-eye-off');
+        const iconEye = document.getElementById('icon-eye');
+
+        if (toggleBtn && passwordInput) {
+            toggleBtn.addEventListener('click', function() {
+                const isHidden = passwordInput.type === 'password';
+                passwordInput.type = isHidden ? 'text' : 'password';
+                iconEyeOff.classList.toggle('hidden', isHidden);
+                iconEye.classList.toggle('hidden', !isHidden);
+            });
+        }
+    })();
+</script>
 
 <script>
     (function() {
