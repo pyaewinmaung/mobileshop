@@ -99,11 +99,11 @@ if ($result && $result->num_rows > 0) {
                         class="h-64 w-full object-contain object-center group-hover:scale-105 transition-transform duration-500" />
                 </div>
 
-                <div class="p-6 flex flex-col flex-grow">
+                <div class="p-6 flex flex-col grow">
                     <p class="text-xs text-brand-600 font-bold uppercase tracking-wider mb-1"><?php echo htmlspecialchars($p['brand']); ?></p>
                     <h3 class="text-xl font-bold text-gray-900 mb-2 truncate"><?php echo htmlspecialchars($p['model_name']); ?></h3>
 
-                    <p class="text-gray-500 text-sm flex-grow line-clamp-2 mb-4">
+                    <p class="text-gray-500 text-sm grow line-clamp-2 mb-4">
                         <?php echo htmlspecialchars($p['description']); ?>
                     </p>
 
