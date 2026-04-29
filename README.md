@@ -9,6 +9,8 @@ Database: MySQL.
 
 Security: password_hash() for secure credential storage, prepared statements to prevent SQL injection, and session-based authentication for role management.
 
+------------------------------------------------------------------------------------------------
+
 Role-Based Features:
 Admin Role:
 
@@ -19,6 +21,8 @@ Product Management: Full CRUD (Create, Read, Update, Delete) operations for mobi
 Order Management: View all customer orders and update order statuses (e.g., Pending, Shipped, Delivered).
 
 User Management: View registered users and their roles.
+
+------------------------------------------------------------------------------------------------
 
 User Role (Customer):
 
