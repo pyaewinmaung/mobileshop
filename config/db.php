@@ -34,7 +34,8 @@ $conn->query("CREATE TABLE IF NOT EXISTS wishlist (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_wishlist (user_id, product_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    INDEX idx_wishlist_created_at (created_at)
 )");
 
 // Helper function for quick prepared queries if needed

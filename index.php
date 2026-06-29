@@ -24,8 +24,9 @@ $search = $_GET['search'] ?? '';
 $wishlistIds = getUserWishlistIds($conn);
 
 // Fetch only the latest 8 products for the homepage
-$sql = "SELECT p.*, (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image
+$sql = "SELECT p.*, pi.image_url as primary_image
         FROM products p
+        LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1
         ORDER BY p.created_at DESC LIMIT 8";
 $result = $conn->query($sql);
 $products = [];

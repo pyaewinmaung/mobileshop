@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 1;
 
         // Fetch product to ensure it exists and check stock + get details
-        $stmt = $conn->prepare("SELECT id, brand, model_name, price, stock_quantity, (SELECT image_url FROM product_images WHERE product_id = products.id AND is_primary = 1 LIMIT 1) as image FROM products WHERE id = ?");
+        $stmt = $conn->prepare("SELECT p.id, p.brand, p.model_name, p.price, p.stock_quantity, pi.image_url as image FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1 WHERE p.id = ?");
         $stmt->bind_param("i", $product_id);
         $stmt->execute();
         $product = $stmt->get_result()->fetch_assoc();
@@ -82,14 +82,31 @@ $totalQuantity = 0;
             </a>
         </div>
     <?php else: ?>
+        <?php
+        // Batch fetch stock quantities for all cart items (avoids N+1 queries)
+        $cartProductIds = array_keys($_SESSION['cart']);
+        $placeholders = implode(',', array_fill(0, count($cartProductIds), '?'));
+        $stmtStockBatch = $conn->prepare("SELECT id, stock_quantity FROM products WHERE id IN ($placeholders)");
+        $types = str_repeat('i', count($cartProductIds));
+        $params = array_merge([$types], $cartProductIds);
+        $refs = [];
+        foreach ($params as $k => $v) {
+            $refs[$k] = &$params[$k];
+        }
+        call_user_func_array([$stmtStockBatch, 'bind_param'], $refs);
+        $stmtStockBatch->execute();
+        $stockResult = $stmtStockBatch->get_result();
+        $stockMap = [];
+        while ($row = $stockResult->fetch_assoc()) {
+            $stockMap[$row['id']] = $row['stock_quantity'];
+        }
+        $stmtStockBatch->close();
+        ?>
         <div class="lg:grid lg:grid-cols-12 lg:gap-x-12 lg:items-start">
             <div class="lg:col-span-8">
                 <ul role="list" class="border-t border-b border-gray-200 divide-y divide-gray-200">
                     <?php foreach ($_SESSION['cart'] as $id => $item):
-                        $stmtStock = $conn->prepare("SELECT stock_quantity FROM products WHERE id = ?");
-                        $stmtStock->bind_param("i", $id);
-                        $stmtStock->execute();
-                        $maxStock = $stmtStock->get_result()->fetch_assoc()['stock_quantity'] ?? 0;
+                        $maxStock = $stockMap[$id] ?? 0;
 
                         $itemTotal = $item['price'] * $item['quantity'];
                         $total += $itemTotal;

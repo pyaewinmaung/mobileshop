@@ -24,10 +24,11 @@ include 'includes/header.php';
 $userId = $_SESSION['user_id'];
 $stmt = $conn->prepare("
     SELECT p.*, 
-           (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image,
+           pi.image_url as primary_image,
            w.created_at as wishlisted_at
     FROM wishlist w
     JOIN products p ON w.product_id = p.id
+    LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1
     WHERE w.user_id = ?
     ORDER BY w.created_at DESC
 ");

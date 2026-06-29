@@ -3,11 +3,17 @@
 require_once '../config/db.php';
 include '../includes/admin_header.php';
 
-// Stats queries
-$totalSales = $conn->query("SELECT SUM(total_amount) as total FROM orders WHERE status != 'cancelled'")->fetch_assoc()['total'] ?? 0;
-$totalOrders = $conn->query("SELECT COUNT(id) as count FROM orders")->fetch_assoc()['count'];
-$totalUsers = $conn->query("SELECT COUNT(id) as count FROM users WHERE role = 'user'")->fetch_assoc()['count'];
-$lowStock = $conn->query("SELECT COUNT(id) as count FROM products WHERE stock_quantity < 10")->fetch_assoc()['count'];
+// Combined stats query (single round-trip instead of 4)
+$statsResult = $conn->query("SELECT
+    (SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status != 'cancelled') as total_sales,
+    (SELECT COUNT(*) FROM orders) as total_orders,
+    (SELECT COUNT(*) FROM users WHERE role = 'user') as total_users,
+    (SELECT COUNT(*) FROM products WHERE stock_quantity < 10) as low_stock
+")->fetch_assoc();
+$totalSales = $statsResult['total_sales'];
+$totalOrders = $statsResult['total_orders'];
+$totalUsers = $statsResult['total_users'];
+$lowStock = $statsResult['low_stock'];
 
 $recentOrders = $conn->query("SELECT o.id, o.total_amount, o.status, o.order_date, u.username FROM orders o JOIN users u ON o.user_id = u.id ORDER BY o.order_date DESC LIMIT 5");
 ?>

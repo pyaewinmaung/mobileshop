@@ -167,7 +167,7 @@ include '../includes/admin_header.php';
                 $offset = ($page - 1) * $limit;
 
                 // Fetch products for current page using LIMIT and OFFSET
-                $products = $conn->query("SELECT p.*, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image FROM products p ORDER BY id DESC LIMIT $limit OFFSET $offset");
+                $products = $conn->query("SELECT p.*, pi.image_url as image FROM products p LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1 ORDER BY p.id DESC LIMIT $limit OFFSET $offset");
                 while ($p = $products->fetch_assoc()):
                 ?>
                     <tr class="hover:bg-gray-50">

@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
 }
 
 // Fetch orders
-$stmt = $conn->prepare("SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC");
+$stmt = $conn->prepare("SELECT id, total_amount, status, order_date FROM orders WHERE user_id = ? ORDER BY order_date DESC");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $ordersResult = $stmt->get_result();
@@ -153,7 +153,7 @@ include '../includes/header.php';
 
                                 <?php
                                 // Fetch order items
-                                $stmtItems = $conn->prepare("SELECT oi.*, p.model_name, p.brand, (SELECT image_url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?");
+                                $stmtItems = $conn->prepare("SELECT oi.*, p.model_name, p.brand, pi.image_url as image FROM order_items oi JOIN products p ON oi.product_id = p.id LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1 WHERE oi.order_id = ?");
                                 $stmtItems->bind_param("i", $order['id']);
                                 $stmtItems->execute();
                                 $itemsResult = $stmtItems->get_result();

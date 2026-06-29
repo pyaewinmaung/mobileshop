@@ -45,16 +45,18 @@ $offset = ($page - 1) * $limit;
 
 // Fetch products
 if (!empty($search)) {
-    $stmt = $conn->prepare("SELECT p.*, (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image
+    $stmt = $conn->prepare("SELECT p.*, pi.image_url as primary_image
                             FROM products p
+                            LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1
                             WHERE p.model_name LIKE ? OR p.brand LIKE ?
                             ORDER BY p.created_at DESC LIMIT ? OFFSET ?");
     $stmt->bind_param("ssii", $searchTerm, $searchTerm, $limit, $offset);
     $stmt->execute();
     $result = $stmt->get_result();
 } else {
-    $sql = "SELECT p.*, (SELECT image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.is_primary = 1 LIMIT 1) as primary_image
+    $sql = "SELECT p.*, pi.image_url as primary_image
             FROM products p
+            LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_primary = 1
             ORDER BY p.created_at DESC LIMIT $limit OFFSET $offset";
     $result = $conn->query($sql);
 }
